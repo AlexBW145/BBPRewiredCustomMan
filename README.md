@@ -6,7 +6,7 @@ RewiredPlusManager.CreateNewInput("MyOwnInput", "This Input Appears", InputActio
 ```
 Afterwards, you can just perform regular input checks such as:
 ```c#
-InputManager.Instance.GetDigitalInput(string, bool)
+InputManager.Instance.GetDigitalInput(string, bool);
 ```
 Make sure that the custom inputs are created before the save data has been loaded!
 ## For Users
