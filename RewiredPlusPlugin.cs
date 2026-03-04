@@ -18,7 +18,7 @@ public class RewiredPlusPlugin : BaseUnityPlugin
     private const string 
         PLUGIN_GUID = "alexbw145.bbplus.rewiredcompat",
         PLUGIN_NAME = "Rewired Compat API",
-        PLUGIN_VERSION = "1.0.0.0";
+        PLUGIN_VERSION = "1.0.0.1";
     public static string GUID => PLUGIN_GUID;
     internal static new ManualLogSource Logger = new ManualLogSource("Rewired Compat API");
 
