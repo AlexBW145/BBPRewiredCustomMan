@@ -114,8 +114,9 @@ public static partial class RewiredPlusManager
             foreach (var action in actions)
             {
                 saveNow = true;
-                if ((KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key) != KeyCode.None)
-                    player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
+                var keycode = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key);
+                if (keycode != KeyCode.None)
+                    player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, keycode, ModifierKeyFlags.None);
                 if (enqueuedJoystickBinds.ContainsKey(action.Value))
                 {
                     if (player.controllers.joystickCount > 0)
