@@ -110,22 +110,14 @@ public static partial class RewiredPlusManager
             if (actions.ContainsKey(input.actionName))
             {
                 player.controllers.maps.GetMap(input.controllerType, input.controllerId, 0, 0).ReplaceOrCreateElementMap(new(input.controllerType, input.elementType, input.elementIdentifier, input.axisRange, input.keyCode, ModifierKeyFlags.None, actions[input.actionName].id, input.axisContribution, input.invert));
-                if (input.controllerType == ControllerType.Joystick && enqueuedJoystickBinds.ContainsKey(actions[input.actionName]))
-                    enqueuedJoystickBinds.Remove(actions[input.actionName]);
             }
         }
         foreach (var action in actions.Where(x => !inputs.Exists(x => actions.ContainsKey(x.actionName))))
         {
             player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
-            if (enqueuedJoystickBinds.ContainsKey(action.Value) && player.controllers.joystickCount > 0)
-            {
-                player.controllers.maps.GetMap(ControllerType.Joystick, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedJoystickBinds[action.Value], ControllerElementType.Button, AxisRange.Full, false);
-                enqueuedJoystickBinds.Remove(action.Value);
-            }
         }
     }
     private static readonly Dictionary<string, Rewired.InputAction> actions = new Dictionary<string, Rewired.InputAction>();
-    private static readonly Dictionary<Rewired.InputAction, int> enqueuedJoystickBinds = new Dictionary<Rewired.InputAction, int>();
     internal static Dictionary<string, Rewired.InputAction> Actions => actions;
     internal static Dictionary<string, bool> actionIsDigital;
     public enum InputMapCategory
@@ -149,10 +141,9 @@ public static partial class RewiredPlusManager
     /// <param name="behaviorID">The behavior ID for this input<para>Already defined ids are 0 (default) and 1 (snap, which all base game inputs uses)</para></param>
     /// <param name="categoryID">The category ID for this input</param>
     /// <param name="key">The default input for this key</param>
-    /// <param name="joystickElementId">The default input id for this joystick input</param>
     /// <returns></returns>
     public static bool CreateNewInput(string name, string descriptionName, InputActionType type, InputBehaviorID behaviorID, InputMapCategory categoryID,
-        KeyCode key = KeyCode.None, int joystickElementId = -1)
+        KeyCode key = KeyCode.None)
     {
         if (string.IsNullOrWhiteSpace(name)) return false;
         var userData = ReInput.UserData;
@@ -223,8 +214,6 @@ public static partial class RewiredPlusManager
             ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.kHBIfvsaRbIMIzJDSPxexnuTOClW = listofactiondatas.ToArray();
             actionIsDigital.Add(name, type == InputActionType.Button);
             InputManager.Instance.rewiredInputNameToSteamInputName.Add(name, name);
-            if (joystickElementId != -1)
-                enqueuedJoystickBinds.Add(action, joystickElementId);
             return true;
         }
         catch (Exception ex)

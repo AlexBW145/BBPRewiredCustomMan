@@ -75,7 +75,7 @@ internal class DebugPatches
     [HarmonyPatch(typeof(WarningScreen), "Start"), HarmonyPostfix]
     private static void DebugInsert()
     {
-        RewiredPlusManager.CreateNewInput("StudentYaySfx", "Yay!!", InputActionType.Button, RewiredPlusManager.InputBehaviorID.Snap, RewiredPlusManager.InputMapCategory.Actions, key: KeyCode.L, joystickElementId: 6);
+        RewiredPlusManager.CreateNewInput("StudentYaySfx", "Yay!!", InputActionType.Button, RewiredPlusManager.InputBehaviorID.Snap, RewiredPlusManager.InputMapCategory.Actions, key: KeyCode.L);
     }
     private static SoundObject yay;
     [HarmonyPatch(typeof(PlayerManager), "Update"), HarmonyPostfix]
