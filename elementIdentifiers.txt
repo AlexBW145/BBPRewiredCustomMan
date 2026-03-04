@@ -1,0 +1,26 @@
+NOTE: THE OBTAINED IDENTIFIERS WERE OBTAINED WHILE AN XINPUT CONTROLLER IS CONNECTED. UNKNOWINGLY UNSURE IF OTHER CONTROLLER TYPES MIGHT CONFLICT OR HAVE DIFFERENT IDS.
+
+0 - Left Stick X
+1 - Left Stick Y
+2 - Right Stick X
+3 - Right Stick Y
+4 - Left Trigger
+5 - Right Trigger
+6 - A
+7 - B
+8 - X
+9 - Y
+10 - Left Shoulder
+11 - Right Shoulder
+12 - Back
+13 - Start
+14 - Left Stick Button
+15 - Right Stick Button
+16 - D-Pad Up
+17 - D-Pad Right
+18 - D-Pad Down
+19 - D-Pad Left
+20 - Left Stick
+21 - Right Stick
+22 - Guide
+23 - D-Pad
