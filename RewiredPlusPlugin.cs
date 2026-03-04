@@ -86,11 +86,6 @@ public static partial class RewiredPlusManager
                 inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType);
                 inputs.Add(new(act));
             }
-            foreach (var act in list.FindAll(x => x.actionId == action.Value.id))
-            {
-                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType);
-                inputs.Add(new(act));
-            }
             for (int i = 0; i < inputs.Count; i++) { // Makes unassigned inputs "unassigned" so that it will not reload to default bindings again.
                 if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType))
                 {
@@ -119,7 +114,8 @@ public static partial class RewiredPlusManager
             foreach (var action in actions)
             {
                 saveNow = true;
-                player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
+                if ((KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key) != KeyCode.None)
+                    player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
                 if (enqueuedJoystickBinds.ContainsKey(action.Value))
                 {
                     if (player.controllers.joystickCount > 0)
@@ -148,10 +144,13 @@ public static partial class RewiredPlusManager
                     enqueuedMouseBinds.Remove(actions[input.actionName]);
             }
         }
-        foreach (var action in actions.Where(x => !inputs.Exists(j => actions.ContainsKey(j.actionName))))
+        foreach (var action in actions.Where(x => !inputs.Exists(j => actions.ContainsKey(j.actionName) && j.controllerType == ControllerType.Keyboard)))
         {
-            saveNow = true;
-            player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
+            if ((KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key) != KeyCode.None)
+            {
+                saveNow = true;
+                player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
+            }
         }
         foreach (var action in actions.Where(x => enqueuedJoystickBinds.ContainsKey(x.Value)))
         {
