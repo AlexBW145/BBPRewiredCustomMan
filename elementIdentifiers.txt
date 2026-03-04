@@ -1,3 +1,4 @@
+// Controller
 NOTE: THE OBTAINED IDENTIFIERS WERE OBTAINED WHILE AN XINPUT CONTROLLER IS CONNECTED. UNKNOWINGLY UNSURE IF OTHER CONTROLLER TYPES MIGHT CONFLICT OR HAVE DIFFERENT IDS.
 
 0 - Left Stick X
@@ -24,3 +25,16 @@ NOTE: THE OBTAINED IDENTIFIERS WERE OBTAINED WHILE AN XINPUT CONTROLLER IS CONNE
 21 - Right Stick
 22 - Guide
 23 - D-Pad
+//
+
+// Mouse
+
+0 - Mouse Horizontal
+1 - Mouse Vertical
+2 - Mouse Wheel
+3 - Left Mouse Button
+4 - Right Mouse Button
+5 - Mouse Button 3
+6 - Mouse Button 4
+7 - Mouse Button 5
+//

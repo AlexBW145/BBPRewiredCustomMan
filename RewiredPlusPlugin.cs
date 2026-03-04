@@ -18,7 +18,7 @@ public class RewiredPlusPlugin : BaseUnityPlugin
     private const string 
         PLUGIN_GUID = "alexbw145.bbplus.rewiredcompat",
         PLUGIN_NAME = "Rewired Compat API",
-        PLUGIN_VERSION = "1.0.0.1";
+        PLUGIN_VERSION = "1.0.0.2";
     public static string GUID => PLUGIN_GUID;
     internal static new ManualLogSource Logger = new ManualLogSource("Rewired Compat API");
 
@@ -126,6 +126,11 @@ public static partial class RewiredPlusManager
                         player.controllers.maps.GetMap(ControllerType.Joystick, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedJoystickBinds[action.Value], ControllerElementType.Button, AxisRange.Full, false);
                     enqueuedJoystickBinds.Remove(action.Value);
                 }
+                if (enqueuedMouseBinds.ContainsKey(action.Value))
+                {
+                    player.controllers.maps.GetMap(ControllerType.Mouse, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedMouseBinds[action.Value], ControllerElementType.Button, AxisRange.Full, false);
+                    enqueuedMouseBinds.Remove(action.Value);
+                }
             }
             if (saveNow)
                 Save();
@@ -139,6 +144,8 @@ public static partial class RewiredPlusManager
                 player.controllers.maps.GetMap(input.controllerType, input.controllerId, 0, 0).ReplaceOrCreateElementMap(new(input.controllerType, input.elementType, input.elementIdentifier, input.axisRange, input.keyCode, ModifierKeyFlags.None, actions[input.actionName].id, input.axisContribution, input.invert));
                 if (input.controllerType == ControllerType.Joystick && enqueuedJoystickBinds.ContainsKey(actions[input.actionName]))
                     enqueuedJoystickBinds.Remove(actions[input.actionName]);
+                else if (input.controllerType == ControllerType.Mouse && enqueuedMouseBinds.ContainsKey(actions[input.actionName]))
+                    enqueuedMouseBinds.Remove(actions[input.actionName]);
             }
         }
         foreach (var action in actions.Where(x => !inputs.Exists(j => actions.ContainsKey(j.actionName))))
@@ -151,15 +158,26 @@ public static partial class RewiredPlusManager
             if (player.controllers.joystickCount > 0 && !inputs.Exists(j => actions.ContainsKey(j.actionName) && j.controllerType == ControllerType.Joystick))
             {
                 saveNow = true;
-                player.controllers.maps.GetMap(ControllerType.Joystick, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedJoystickBinds[action.Value], ControllerElementType.Button, AxisRange.Full, false);
+                player.controllers.maps.GetMap(ControllerType.Joystick, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedJoystickBinds[action.Value], (ControllerElementType)action.Value.type, AxisRange.Full, false);
             }
             enqueuedJoystickBinds.Remove(action.Value);
+        }
+        foreach (var action in actions.Where(x => enqueuedMouseBinds.ContainsKey(x.Value)))
+        {
+            if (!inputs.Exists(j => actions.ContainsKey(j.actionName) && j.controllerType == ControllerType.Mouse))
+            {
+                saveNow = true;
+                player.controllers.maps.GetMap(ControllerType.Mouse, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedMouseBinds[action.Value], (ControllerElementType)action.Value.type, AxisRange.Full, false);
+            }
+            enqueuedMouseBinds.Remove(action.Value);
         }
         if (saveNow)
             Save();
     }
     private static readonly Dictionary<string, Rewired.InputAction> actions = new Dictionary<string, Rewired.InputAction>();
-    private static readonly Dictionary<Rewired.InputAction, int> enqueuedJoystickBinds = new Dictionary<Rewired.InputAction, int>();
+    private static readonly Dictionary<Rewired.InputAction, int> 
+        enqueuedJoystickBinds = new Dictionary<Rewired.InputAction, int>(),
+        enqueuedMouseBinds = new Dictionary<Rewired.InputAction, int>();
     internal static Dictionary<string, Rewired.InputAction> Actions => actions;
     internal static Dictionary<string, bool> actionIsDigital;
     public enum InputMapCategory
@@ -184,9 +202,10 @@ public static partial class RewiredPlusManager
     /// <param name="categoryID">The category ID for this input</param>
     /// <param name="key">The default input for this key</param>
     /// <param name="joystickElementId">The default input id for this joystick input</param>
+    /// <param name="mouseElementId">The default input id for this mouse input</param>
     /// <returns></returns>
     public static bool CreateNewInput(string name, string descriptionName, InputActionType type, InputBehaviorID behaviorID, InputMapCategory categoryID,
-        KeyCode key = KeyCode.None, int joystickElementId = -1)
+        KeyCode key = KeyCode.None, int joystickElementId = -1, int mouseElementId = -1)
     {
         if (string.IsNullOrWhiteSpace(name)) return false;
         var userData = ReInput.UserData;
@@ -259,6 +278,8 @@ public static partial class RewiredPlusManager
             InputManager.Instance.rewiredInputNameToSteamInputName.Add(name, name);
             if (joystickElementId != -1)
                 enqueuedJoystickBinds.Add(action, joystickElementId);
+            if (mouseElementId != -1)
+                enqueuedMouseBinds.Add(action, mouseElementId);
             return true;
         }
         catch (Exception ex)

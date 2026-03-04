@@ -2,6 +2,8 @@
 using Rewired;
 using Rewired.Data;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace BBPRewiredCompat;
 
@@ -73,7 +75,7 @@ internal class DebugPatches
     [HarmonyPatch(typeof(WarningScreen), "Start"), HarmonyPostfix]
     private static void DebugInsert()
     {
-        RewiredPlusManager.CreateNewInput("StudentYaySfx", "Yay!!", InputActionType.Button, RewiredPlusManager.InputBehaviorID.Snap, RewiredPlusManager.InputMapCategory.Actions, key: KeyCode.L, joystickElementId: 6);
+        RewiredPlusManager.CreateNewInput("StudentYaySfx", "Yay!!", InputActionType.Button, RewiredPlusManager.InputBehaviorID.Snap, RewiredPlusManager.InputMapCategory.Actions, key: KeyCode.L, joystickElementId: 6, mouseElementId: 3);
     }
     private static SoundObject yay;
     [HarmonyPatch(typeof(PlayerManager), "Update"), HarmonyPostfix]

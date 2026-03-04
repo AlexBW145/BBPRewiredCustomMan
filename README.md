@@ -2,7 +2,7 @@
 ## For Modders
 Just follow the example code in the debug class in `RewiredPatches.cs`, however the simple way of creating a digital input is always this:
 ```c#
-RewiredPlusManager.CreateNewInput(string, string, InputActionType, RewiredPlusManager.InputBehaviorID, RewiredPlusManager.InputMapCategory, [key: KeyCode, joystickElementId: int]);
+RewiredPlusManager.CreateNewInput(string, string, InputActionType, RewiredPlusManager.InputBehaviorID, RewiredPlusManager.InputMapCategory, [key: KeyCode, joystickElementId: int, mouseElementId: int]);
 ```
 With an example being:
 ```c#
