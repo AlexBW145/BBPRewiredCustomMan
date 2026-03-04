@@ -88,7 +88,24 @@ public static partial class RewiredPlusManager
                 inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType);
                 inputs.Add(new(act));
             }
-            inputs.RemoveAll(x => x.actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && x.controllerId == j.controllerMap.controllerId && x.controllerType == j.controllerMap.controllerType));
+            foreach (var act in list.FindAll(x => x.actionId == action.Value.id))
+            {
+                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType);
+                inputs.Add(new(act));
+            }
+            for (int i = 0; i < inputs.Count; i++) { // Makes unassigned inputs "unassigned" so that it will not reload to default bindings again.
+                if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType))
+                {
+                    inputs[i] = new RewiredPlusData()
+                    {
+                        actionName = action.Value.name,
+                        controllerType = inputs[i].controllerType,
+                        controllerId = inputs[i].controllerId,
+
+                        elementIdentifier = -1,
+                    };
+                }
+            }
         }
         var json = JsonConvert.SerializeObject(inputs, Formatting.Indented);
         File.WriteAllText(Path.Combine(path, "customRewiredInput.json"), json);
@@ -113,7 +130,7 @@ public static partial class RewiredPlusManager
             return;
         }
         List<RewiredPlusData> inputs = JsonConvert.DeserializeObject<List<RewiredPlusData>>(File.ReadAllText(Path.Combine(path, "customRewiredInput.json")));
-        foreach (var input in inputs)
+        foreach (var input in inputs.Where(x => x.elementIdentifier != -1))
         {
             if (actions.ContainsKey(input.actionName))
             {
@@ -122,15 +139,13 @@ public static partial class RewiredPlusManager
                     enqueuedJoystickBinds.Remove(actions[input.actionName]);
             }
         }
-        foreach (var action in actions.Where(x => !inputs.Exists(x => actions.ContainsKey(x.actionName))))
-        {
+        foreach (var action in actions.Where(x => !inputs.Exists(j => actions.ContainsKey(j.actionName))))
             player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
-            if (enqueuedJoystickBinds.ContainsKey(action.Value))
-            {
-                if (player.controllers.joystickCount > 0)
-                    player.controllers.maps.GetMap(ControllerType.Joystick, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedJoystickBinds[action.Value], ControllerElementType.Button, AxisRange.Full, false);
-                enqueuedJoystickBinds.Remove(action.Value);
-            }
+        foreach (var action in actions.Where(x => enqueuedJoystickBinds.ContainsKey(x.Value)))
+        {
+            if (player.controllers.joystickCount > 0 && !inputs.Exists(j => actions.ContainsKey(j.actionName) && j.controllerType == ControllerType.Joystick))
+                player.controllers.maps.GetMap(ControllerType.Joystick, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedJoystickBinds[action.Value], ControllerElementType.Button, AxisRange.Full, false);
+            enqueuedJoystickBinds.Remove(action.Value);
         }
     }
     private static readonly Dictionary<string, Rewired.InputAction> actions = new Dictionary<string, Rewired.InputAction>();
