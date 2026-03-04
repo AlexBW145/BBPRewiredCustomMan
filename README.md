@@ -1,8 +1,12 @@
 # BBPRewiredCompat
 ## For Modders
 Just follow the example code in the debug class in `RewiredPatches.cs`, however the simple way of creating a digital input is always this:
-```cs
+```c#
 RewiredPlusManager.CreateNewInput("MyOwnInput", "This Input Appears", InputActionType.Button, RewiredPlusManager.InputBehaviorID.Snap, RewiredPlusManager.InputMapCategory.Actions, key: KeyCode.Q, joystickElementId: 6);
+```
+Afterwards, you can just perform regular input checks such as
+```c#
+InputManager.Instance.GetDigitalInput(string, bool)
 ```
 Make sure that the custom inputs are created before the save data has been loaded!
 ## For Users
