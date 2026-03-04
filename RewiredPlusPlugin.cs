@@ -125,7 +125,7 @@ public static partial class RewiredPlusManager
         }
     }
     private static readonly Dictionary<string, Rewired.InputAction> actions = new Dictionary<string, Rewired.InputAction>();
-    private static readonly Dictionary<Rewired.InputAction, int> enqueuedJoystickBinds;
+    private static readonly Dictionary<Rewired.InputAction, int> enqueuedJoystickBinds = new Dictionary<Rewired.InputAction, int>();
     internal static Dictionary<string, Rewired.InputAction> Actions => actions;
     internal static Dictionary<string, bool> actionIsDigital;
     public enum InputMapCategory
