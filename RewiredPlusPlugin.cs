@@ -146,10 +146,11 @@ public static partial class RewiredPlusManager
         }
         foreach (var action in actions.Where(x => !inputs.Exists(j => actions.ContainsKey(j.actionName) && j.controllerType == ControllerType.Keyboard)))
         {
-            if ((KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key) != KeyCode.None)
+            var keycode = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key);
+            if (keycode != KeyCode.None)
             {
                 saveNow = true;
-                player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
+                player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, keycode, ModifierKeyFlags.None);
             }
         }
         foreach (var action in actions.Where(x => enqueuedJoystickBinds.ContainsKey(x.Value)))
