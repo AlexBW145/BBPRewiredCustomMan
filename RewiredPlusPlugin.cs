@@ -64,7 +64,6 @@ public static partial class RewiredPlusManager
 {
     internal static List<ActionElementMap> GetElements()
     {
-        var save = (UserDataStore_PlayerPrefs)ReInput.userDataStore;
         var player = ReInput.players.GetPlayer(0);
         var list = new List<ActionElementMap>();
         foreach (var map in player.controllers.maps.GetAllMaps())
@@ -111,6 +110,7 @@ public static partial class RewiredPlusManager
     }
     internal static void Load()
     {
+        bool saveNow = false;
         var save = (UserDataStore_PlayerPrefs)ReInput.userDataStore;
         var player = ReInput.players.GetPlayer(0);
         var path = Path.Combine(Application.persistentDataPath, "Modded", PlayerFileManager.Instance.fileName);
@@ -118,6 +118,7 @@ public static partial class RewiredPlusManager
         {
             foreach (var action in actions)
             {
+                saveNow = true;
                 player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
                 if (enqueuedJoystickBinds.ContainsKey(action.Value))
                 {
@@ -126,6 +127,8 @@ public static partial class RewiredPlusManager
                     enqueuedJoystickBinds.Remove(action.Value);
                 }
             }
+            if (saveNow)
+                Save();
             return;
         }
         List<RewiredPlusData> inputs = JsonConvert.DeserializeObject<List<RewiredPlusData>>(File.ReadAllText(Path.Combine(path, "customRewiredInput.json")));
@@ -139,13 +142,21 @@ public static partial class RewiredPlusManager
             }
         }
         foreach (var action in actions.Where(x => !inputs.Exists(j => actions.ContainsKey(j.actionName))))
+        {
+            saveNow = true;
             player.controllers.maps.GetMap(ControllerType.Keyboard, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key), ModifierKeyFlags.None);
+        }
         foreach (var action in actions.Where(x => enqueuedJoystickBinds.ContainsKey(x.Value)))
         {
             if (player.controllers.joystickCount > 0 && !inputs.Exists(j => actions.ContainsKey(j.actionName) && j.controllerType == ControllerType.Joystick))
+            {
+                saveNow = true;
                 player.controllers.maps.GetMap(ControllerType.Joystick, 0, 0, 0).CreateElementMap(action.Value.id, Pole.Positive, enqueuedJoystickBinds[action.Value], ControllerElementType.Button, AxisRange.Full, false);
+            }
             enqueuedJoystickBinds.Remove(action.Value);
         }
+        if (saveNow)
+            Save();
     }
     private static readonly Dictionary<string, Rewired.InputAction> actions = new Dictionary<string, Rewired.InputAction>();
     private static readonly Dictionary<Rewired.InputAction, int> enqueuedJoystickBinds = new Dictionary<Rewired.InputAction, int>();
