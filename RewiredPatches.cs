@@ -2,6 +2,7 @@
 using Rewired;
 using Rewired.Data;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
 
@@ -62,6 +63,27 @@ internal class RewiredPatches
     private static void Save() => RewiredPlusManager.Save();
     [HarmonyPatch(typeof(PlayerFileManager), "Load"), HarmonyPostfix]
     private static void Load() => RewiredPlusManager.Load();
+    [HarmonyPatch(typeof(Rewired.UI.ControlMapper.ControlMapper), "Initialize"), HarmonyPrefix]
+    private static void LoadPages(Rewired.UI.ControlMapper.ControlMapper __instance)
+    {
+        foreach (var page in RewiredPlusManager.newPages)
+        {
+            __instance._mappingSets[(int)page.Value]._actionCategoryIds = __instance._mappingSets[(int)page.Value]._actionCategoryIds.AddToArray((int)page.Key);
+            __instance._mappingSets[(int)page.Value]._actionCategoryIdsReadOnly = new ReadOnlyCollection<int>(__instance._mappingSets[(int)page.Value]._actionCategoryIds);
+        }
+    }
+    [HarmonyPatch(typeof(Rewired.UI.ControlMapper.ControlMapper), "OnRestoreDefaultsConfirmed")]
+    [HarmonyPatch(typeof(InputManager), nameof(InputManager.ResetControlMaps))]
+    [HarmonyPostfix]
+    private static void RestoreDefaults(object __instance)
+    {
+        RewiredPlusManager.RestoreDefaults();
+        if (__instance is Rewired.UI.ControlMapper.ControlMapper)
+        {
+            var mapper = (Rewired.UI.ControlMapper.ControlMapper)__instance;
+            mapper.Redraw(false, false);
+        }
+    }
 }
 #if DEBUG
 [HarmonyPatch]
@@ -75,7 +97,9 @@ internal class DebugPatches
     [HarmonyPatch(typeof(WarningScreen), "Start"), HarmonyPostfix]
     private static void DebugInsert()
     {
-        RewiredPlusManager.CreateNewInput("StudentYaySfx", "Yay!!", InputActionType.Button, RewiredPlusManager.InputBehaviorID.Snap, RewiredPlusManager.InputMapCategory.Actions, key: KeyCode.L, joystickElementId: 6, mouseElementId: 3);
+        var cat = RewiredPlusManager.CreateNewCategory("bbplustest", "Testing Grounds", RewiredPlusManager.InputMapPage.Gameplay);
+        RewiredPlusManager.CreateNewInput("StudentYaySfx", "Yay!!", RewiredPlusManager.InputBehaviorID.Snap, cat, key: KeyCode.L, joystickElementId: 6, mouseElementId: 3);
+        RewiredPlusManager.CreateNewInput("AxisTest", "TestAxis", RewiredPlusManager.InputBehaviorID.Snap, cat, key: (KeyCode.D, KeyCode.A, KeyCode.W, KeyCode.S));
     }
     private static SoundObject yay;
     [HarmonyPatch(typeof(PlayerManager), "Update"), HarmonyPostfix]
