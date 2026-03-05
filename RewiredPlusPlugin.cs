@@ -19,7 +19,7 @@ public class RewiredPlusPlugin : BaseUnityPlugin
     private const string 
         PLUGIN_GUID = "alexbw145.bbplus.rewiredcompat",
         PLUGIN_NAME = "Rewired Compat API",
-        PLUGIN_VERSION = "1.1.0.1";
+        PLUGIN_VERSION = "1.1.0.2";
     public static string GUID => PLUGIN_GUID;
     internal static new ManualLogSource Logger = new ManualLogSource("Rewired Compat API");
 
@@ -351,7 +351,8 @@ public static partial class RewiredPlusManager
             DoInsertsToRewired(action, behavior);
             actionIsDigital.Add(name, type == InputActionType.Button);
             InputManager.Instance.rewiredInputNameToSteamInputName.Add(name, name);
-            InputManager.Instance.steamDigitalInputs.Add(name, new DigitalInputData(SteamInput.GetDigitalActionHandle(name)));
+            if (SteamManager.Initialized)
+                InputManager.Instance.steamDigitalInputs.Add(name, new DigitalInputData(SteamInput.GetDigitalActionHandle(name)));
             if (joystickElementId != -1)
                 defaultJoystickBinds.Add(action, (joystickElementId, -1));
             if (mouseElementId != -1)
@@ -426,7 +427,8 @@ public static partial class RewiredPlusManager
                 if ((step == 0 ? (mouseElementId.Value.Item1, mouseElementId.Value.Item3) : (mouseElementId.Value.Item2, mouseElementId.Value.Item4)) != (-1, -1))
                     defaultMouseBinds.Add(action, (step == 0 ? (mouseElementId.Value.Item1, mouseElementId.Value.Item3) : (mouseElementId.Value.Item2, mouseElementId.Value.Item4)));
             }
-            InputManager.Instance.steamAnalogInputs.Add(name, SteamInput.GetAnalogActionHandle(name));
+            if (SteamManager.Initialized)
+                InputManager.Instance.steamAnalogInputs.Add(name, SteamInput.GetAnalogActionHandle(name));
             return true;
         }
         catch (Exception ex)
