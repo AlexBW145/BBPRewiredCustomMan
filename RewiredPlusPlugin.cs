@@ -19,7 +19,7 @@ public class RewiredPlusPlugin : BaseUnityPlugin
     private const string 
         PLUGIN_GUID = "alexbw145.bbplus.rewiredcompat",
         PLUGIN_NAME = "Rewired Compat API",
-        PLUGIN_VERSION = "1.1.0.0";
+        PLUGIN_VERSION = "1.1.0.1";
     public static string GUID => PLUGIN_GUID;
     internal static new ManualLogSource Logger = new ManualLogSource("Rewired Compat API");
 
@@ -73,7 +73,7 @@ public static partial class RewiredPlusManager
     }
     internal static void Save()
     {
-        var path = Path.Combine(Application.persistentDataPath, "Modded", PlayerFileManager.Instance.fileName);
+        var path = Path.Combine(Application.persistentDataPath, "Modded");
         List<RewiredPlusData> inputs;
         if (File.Exists(Path.Combine(path, "customRewiredInput.json")))
             inputs = JsonConvert.DeserializeObject<List<RewiredPlusData>>(File.ReadAllText(Path.Combine(path, "customRewiredInput.json")));
@@ -170,7 +170,7 @@ public static partial class RewiredPlusManager
     }
     internal static void Load()
     {
-        var path = Path.Combine(Application.persistentDataPath, "Modded", PlayerFileManager.Instance.fileName);
+        var path = Path.Combine(Application.persistentDataPath, "Modded");
         if (!File.Exists(Path.Combine(path, "customRewiredInput.json")))
         {
             RestoreDefaults();

@@ -16,6 +16,6 @@ Make sure that the custom inputs are created before the save data has been loade
 ## For Users
 Defined inputs has a default binding on what the coder binds to, controller support is indeed available but full functionality will occur if **Steam Input** is disabled.
 
-Saved custom bindings goes to specific name entries in your global save packed into a json, has been tested twice and works fine.
+Saved custom bindings in Baldi's Basics Plus is part of your global save and your defined custom bindings are packed into a json, the save system for custom bindings has been tested twice and works fine.
 
 This manager is not dependent to any APIs, but it's only specifically dependent to Baldi's Basics Plus.
