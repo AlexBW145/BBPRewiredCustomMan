@@ -19,7 +19,7 @@ public class RewiredPlusPlugin : BaseUnityPlugin
     private const string 
         PLUGIN_GUID = "alexbw145.bbplus.rewiredcompat",
         PLUGIN_NAME = "Rewired Compat API",
-        PLUGIN_VERSION = "1.1.0.2";
+        PLUGIN_VERSION = "1.1.1.0";
     public static string GUID => PLUGIN_GUID;
     internal static new ManualLogSource Logger = new ManualLogSource("Rewired Compat API");
 
@@ -36,8 +36,10 @@ internal class RewiredPlusData
     public string actionName;
     public ControllerType controllerType;
     public int controllerId;
+    public bool isSecondInput;
 
     public KeyCode keyCode;
+    public ModifierKeyFlags modifierKeys;
     public int elementIdentifier;
     public Pole axisContribution;
     public ControllerElementType elementType;
@@ -51,8 +53,10 @@ internal class RewiredPlusData
         actionName = ReInput.UserData.GetActionById(elementMap.actionId).name;
         controllerType = elementMap.controllerMap.controllerType;
         controllerId = elementMap.controllerMap.controllerId;
+        isSecondInput = elementMap._actionCategoryId == -1;
 
         keyCode = elementMap.keyCode;
+        modifierKeys = elementMap.modifierKeyFlags;
         elementIdentifier = elementMap.elementIdentifierId;
         axisContribution = elementMap.axisContribution;
         elementType = elementMap.elementType;
@@ -84,16 +88,17 @@ public static partial class RewiredPlusManager
         {
             foreach (var act in list.FindAll(x => x.actionId == action.Value.id))
             {
-                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType && x.axisRange == act.axisRange && x.axisContribution == act.axisContribution);
+                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType && x.axisRange == act.axisRange && x.axisContribution == act.axisContribution && x.isSecondInput == (act._actionCategoryId == -1 ? true : false));
                 inputs.Add(new(act));
             }
             for (int i = 0; i < inputs.Count; i++) { // Makes unassigned inputs "unassigned" so that it will not reload to default bindings again.
-                if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType && j.axisRange == inputs[i].axisRange && j.axisContribution == inputs[i].axisContribution))
+                if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType && j.axisRange == inputs[i].axisRange && j.axisContribution == inputs[i].axisContribution && inputs[i].isSecondInput == (j._actionCategoryId == -1 ? true : false)))
                 {
                     inputs[i] = new RewiredPlusData()
                     {
                         actionName = action.Value.name,
                         controllerType = inputs[i].controllerType,
+                        isSecondInput = inputs[i].isSecondInput,
                         elementType = inputs[i].elementType,
                         controllerId = inputs[i].controllerId,
                         axisRange = inputs[i].axisRange,
@@ -183,7 +188,12 @@ public static partial class RewiredPlusManager
         foreach (var input in inputs.Where(x => x.elementIdentifier != -1))
         {
             if (actions.ContainsKey(input.actionName))
-                player.controllers.maps.GetMap(input.controllerType, input.controllerId, GetCategoryID(actions[input.actionName]), 0)?.ReplaceOrCreateElementMap(new(input.controllerType, input.elementType, input.elementIdentifier, input.axisRange, input.keyCode, ModifierKeyFlags.None, actions[input.actionName].id, input.axisContribution, input.invert));
+            {
+                ActionElementMap map = null;
+                player.controllers.maps.GetMap(input.controllerType, input.controllerId, GetCategoryID(actions[input.actionName]), 0)?.ReplaceOrCreateElementMap(new(input.controllerType, input.elementType, input.elementIdentifier, input.axisRange, input.keyCode, input.modifierKeys, actions[input.actionName].id, input.axisContribution, input.invert), out map);
+                if (map != null)
+                    map._actionCategoryId = input.isSecondInput ? -1 : 0;
+            }
         }
         foreach (var action in actions.Where(x => !inputs.Exists(j => x.Key == j.actionName && j.controllerType == ControllerType.Keyboard)))
         {
