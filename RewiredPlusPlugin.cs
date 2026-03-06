@@ -53,7 +53,7 @@ internal class RewiredPlusData
         actionName = ReInput.UserData.GetActionById(elementMap.actionId).name;
         controllerType = elementMap.controllerMap.controllerType;
         controllerId = elementMap.controllerMap.controllerId;
-        isSecondInput = elementMap._actionCategoryId == -1;
+        isSecondInput = elementMap._actionCategoryId != 0;
 
         keyCode = elementMap.keyCode;
         modifierKeys = elementMap.modifierKeyFlags;
@@ -88,11 +88,11 @@ public static partial class RewiredPlusManager
         {
             foreach (var act in list.FindAll(x => x.actionId == action.Value.id))
             {
-                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType && x.axisRange == act.axisRange && x.axisContribution == act.axisContribution && x.isSecondInput == (act._actionCategoryId == -1 ? true : false));
+                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType && x.axisRange == act.axisRange && x.axisContribution == act.axisContribution && x.isSecondInput == (act._actionCategoryId != 0 ? true : false));
                 inputs.Add(new(act));
             }
             for (int i = 0; i < inputs.Count; i++) { // Makes unassigned inputs "unassigned" so that it will not reload to default bindings again.
-                if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType && j.axisRange == inputs[i].axisRange && j.axisContribution == inputs[i].axisContribution && inputs[i].isSecondInput == (j._actionCategoryId == -1 ? true : false)))
+                if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType && j.axisRange == inputs[i].axisRange && j.axisContribution == inputs[i].axisContribution && inputs[i].isSecondInput == (j._actionCategoryId != 0 ? true : false)))
                 {
                     inputs[i] = new RewiredPlusData()
                     {
