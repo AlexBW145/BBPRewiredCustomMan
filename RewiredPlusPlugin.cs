@@ -154,7 +154,7 @@ public static partial class RewiredPlusManager
                     if (defaultJoystickBinds[action.Value].Item2 != -1)
                         SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item2, ControllerType.Joystick, Pole.Negative, false);
                 }
-                else
+                else if (defaultJoystickBinds[action.Value].Item1 != -1)
                     SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick);
             }
             if (defaultMouseBinds.ContainsKey(action.Value))
@@ -166,7 +166,7 @@ public static partial class RewiredPlusManager
                     if (defaultMouseBinds[action.Value].Item2 != -1)
                         SetBind(player, action.Value, defaultMouseBinds[action.Value].Item2, ControllerType.Mouse, Pole.Negative, false);
                 }
-                else
+                else if(defaultMouseBinds[action.Value].Item1 != -1)
                     SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse);
             }
         }
@@ -235,7 +235,7 @@ public static partial class RewiredPlusManager
                     if (defaultJoystickBinds[action.Value].Item2 != -1)
                         SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item2, ControllerType.Joystick, Pole.Negative, false);
                 }
-                else
+                else if (defaultJoystickBinds[action.Value].Item1 != -1)
                     SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick);
             }
         }
@@ -251,7 +251,7 @@ public static partial class RewiredPlusManager
                     if (defaultMouseBinds[action.Value].Item2 != -1)
                         SetBind(player, action.Value, defaultMouseBinds[action.Value].Item2, ControllerType.Mouse, Pole.Negative, false);
                 }
-                else
+                else if (defaultMouseBinds[action.Value].Item1 != -1)
                     SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse);
             }
         }
