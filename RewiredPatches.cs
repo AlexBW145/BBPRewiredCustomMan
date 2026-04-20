@@ -3,8 +3,6 @@ using Rewired;
 using Rewired.Data;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using UnityEngine;
 
 namespace BBPRewiredCompat;
 
@@ -17,49 +15,9 @@ internal class RewiredPatches
     private static void GetStaticUserData(ref UserData __result) => __result = ReInput.UserData;
     [HarmonyPatch(typeof(InputManager), "Start"), HarmonyPostfix]
     private static void GetDigitalDictionary(Dictionary<string, bool> ___actionIsDigital) => RewiredPlusManager.actionIsDigital = ___actionIsDigital;
-    /*[HarmonyPatch(typeof(UserDataStore_PlayerPrefs), "GetControllerMapPlayerPrefsKeyCommonSuffix"), HarmonyPrefix]
-    private static void Set256(Player player, ControllerIdentifier controllerIdentifier, int categoryId, ref int layoutId, int ppKeyVersion, out int __state)
-    {
-        __state = layoutId;
-        if (layoutId > ReInput.UserData.actions.Count) // DO NOT ADD IN INPUTS TO THIS LIST, THESE ARE LEFT BY DEFAULT.
-            layoutId = 256;
-    }
-    [HarmonyPatch(typeof(UserDataStore_PlayerPrefs), "GetControllerMapPlayerPrefsKeyCommonSuffix"), HarmonyPostfix]
-    private static void Is256(Player player, ControllerIdentifier controllerIdentifier, int categoryId, int layoutId, int ppKeyVersion, ref string __result, int __state)
-    {
-        if (layoutId == 256)
-            __result += "|actualModdedString=" + ReInput.UserData.GetActionById(__state).name;
-    }
-    [HarmonyPatch(typeof(ControllerMap), nameof(ControllerMap.uYSdnhMxPwUaPWNtLyieoaHsarrc)), HarmonyPostfix]
-    private static void Grab256(object[] __args, ControllerMap __instance)
-    {
-        SerializedObject obj = (SerializedObject)__args[0];
-        if (__instance._layoutId == 256)
-        {
-            string thevalue = "";
-            obj.TryGetDeserializedValueByRef("actualModdedString", ref thevalue);
-            if (RewiredPlusManager.Actions.ContainsKey(thevalue))
-                __instance.layoutId = RewiredPlusManager.Actions[thevalue].id;
-        }
-    }
-    [HarmonyPatch(typeof(ControllerMap), nameof(ControllerMap.uzaeGcbFOWCisiMZhXvlchZxqgLuB)), HarmonyPrefix]
-    static void Save256(out int __state, ControllerMap __instance)
-    {
-        __state = __instance._layoutId;
-        if (__instance._layoutId > ReInput.UserData.actions.Count)
-            __instance._layoutId = 256;
-    }
-    [HarmonyPatch(typeof(ControllerMap), nameof(ControllerMap.uzaeGcbFOWCisiMZhXvlchZxqgLuB)), HarmonyPostfix]
-    static void Reset256(object[] __args, int __state, ControllerMap __instance)
-    {
-        SerializedObject obj = (SerializedObject)__args[0];
-        if (__instance._layoutId == 256)
-        {
-            obj.Add("actualModdedString", ReInput.UserData.GetActionById(__state).name);
-            __instance._layoutId = __state;
-        }
-    }*/
     [HarmonyPatch(typeof(UserDataStore_PlayerPrefs), "Save"), HarmonyPostfix]
+    private static void SaveOLD() => RewiredPlusManager.Save();
+    [HarmonyPatch(typeof(UserDataStore_KeyValue), "Save"), HarmonyPostfix]
     private static void Save() => RewiredPlusManager.Save();
     [HarmonyPatch(typeof(PlayerFileManager), "Load"), HarmonyPostfix]
     private static void Load() => RewiredPlusManager.Load();

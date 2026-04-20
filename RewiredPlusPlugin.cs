@@ -19,14 +19,19 @@ public class RewiredPlusPlugin : BaseUnityPlugin
     private const string 
         PLUGIN_GUID = "alexbw145.bbplus.rewiredcompat",
         PLUGIN_NAME = "Rewired Compat API",
-        PLUGIN_VERSION = "1.1.1.0";
+        PLUGIN_VERSION = "1.1.2.0";
     public static string GUID => PLUGIN_GUID;
     internal static new ManualLogSource Logger = new ManualLogSource("Rewired Compat API");
+    internal static bool is0x14x2post => new System.Version(
+        Application.version.Contains("Pre") ? Application.version.Split(["Pre"], StringSplitOptions.RemoveEmptyEntries)[0] 
+        : new string(Application.version.Where(x => !char.IsLetter(x)).ToArray())) 
+        >= new System.Version("0.14.2");
 
     private void Awake()
     {
         Logger = base.Logger;
         new Harmony(PLUGIN_GUID).PatchAll();
+        Logger.LogInfo($"Current Baldi's Basics Plus Version is v0.14.2+?: {is0x14x2post}");
     }
 }
 
@@ -77,7 +82,11 @@ public static partial class RewiredPlusManager
     }
     internal static void Save()
     {
+        if (RewiredPlusPlugin.is0x14x2post && PlayerFileManager.Instance.fileName == "!UnassignedFile")
+            return;
         var path = Path.Combine(Application.persistentDataPath, "Modded");
+        if (RewiredPlusPlugin.is0x14x2post)
+            path = Path.Combine(path, PlayerFileManager.Instance.fileName);
         List<RewiredPlusData> inputs;
         if (File.Exists(Path.Combine(path, "customRewiredInput.json")))
             inputs = JsonConvert.DeserializeObject<List<RewiredPlusData>>(File.ReadAllText(Path.Combine(path, "customRewiredInput.json")));
@@ -123,7 +132,7 @@ public static partial class RewiredPlusManager
     }
     internal static void RestoreDefaults()
     {
-        var save = (UserDataStore_PlayerPrefs)ReInput.userDataStore;
+        UserDataStore save = (UserDataStore)ReInput.userDataStore;
         var player = ReInput.players.GetPlayer(0);
         bool saveNow = false;
         foreach (var action in actions)
@@ -175,13 +184,17 @@ public static partial class RewiredPlusManager
     }
     internal static void Load()
     {
+        if (RewiredPlusPlugin.is0x14x2post && PlayerFileManager.Instance.fileName == "!UnassignedFile")
+            return;
         var path = Path.Combine(Application.persistentDataPath, "Modded");
+        if (RewiredPlusPlugin.is0x14x2post)
+            path = Path.Combine(path, PlayerFileManager.Instance.fileName);
         if (!File.Exists(Path.Combine(path, "customRewiredInput.json")))
         {
             RestoreDefaults();
             return;
         }
-        var save = (UserDataStore_PlayerPrefs)ReInput.userDataStore;
+        UserDataStore save = (UserDataStore)ReInput.userDataStore;
         var player = ReInput.players.GetPlayer(0);
         bool saveNow = false;
         List<RewiredPlusData> inputs = JsonConvert.DeserializeObject<List<RewiredPlusData>>(File.ReadAllText(Path.Combine(path, "customRewiredInput.json")));
