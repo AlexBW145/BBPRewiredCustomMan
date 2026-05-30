@@ -1,4 +1,4 @@
-# BBPRewiredCompat
+# Baldi's Basics Plus Rewired Custom Input Manager
 ## For Modders
 Just follow the example code in the debug class in `RewiredPatches.cs`, however the simple way of creating a digital input is always this:
 ```c#
@@ -16,6 +16,6 @@ Make sure that the custom inputs are created before the save data has been loade
 ## For Users
 Defined inputs has a default binding on what the coder binds to, controller support is indeed available but full functionality will occur if **Steam Input** is disabled.
 
-Saved custom bindings in Baldi's Basics Plus is part of your global save and your defined custom bindings are packed into a json, the save system for custom bindings has been tested twice and works fine.
+Saved custom bindings in Baldi's Basics Plus are part of your save files and are separate as always (in versions before v0.14.2 is part of your global save) and your defined custom bindings are packed into a json, the save system for custom bindings has been tested twice and works fine.
 
 This manager is not dependent to any APIs, but it's only specifically dependent to Baldi's Basics Plus.

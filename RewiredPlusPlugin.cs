@@ -301,7 +301,7 @@ public static partial class RewiredPlusManager
         ReInput.IxvfGFEozkuytPyuvkhMreLoTHfHA.NmdkjXCanZSlXdZefgYrbYzhElYm = new System.Collections.ObjectModel.ReadOnlyCollection<Rewired.InputAction>(ReInput.IxvfGFEozkuytPyuvkhMreLoTHfHA.stleLScZDZJQrUJoNEgwOLcXdfCxA);
 
         ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.skUcRTJPUkscVGYhzTxsQdNLnjrhb = ReInput.IxvfGFEozkuytPyuvkhMreLoTHfHA.nTPwEUHXNHjmnrGoauPbkCHYvygn;
-        CXjDeHHBYTLUiyUxJsOcTBGTUZYJA inputdata = new CXjDeHHBYTLUiyUxJsOcTBGTUZYJA(9999999, action, behavior, ReInput.configVars);
+        CXjDeHHBYTLUiyUxJsOcTBGTUZYJA inputdata = new CXjDeHHBYTLUiyUxJsOcTBGTUZYJA(ReInput.players.SystemPlayer.id, action, behavior, ReInput.configVars);
         ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.fCShKwOohAeVUXnbeMlNdzEAyDJF = ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.fCShKwOohAeVUXnbeMlNdzEAyDJF.AddToArray(inputdata);
         var listofactiondatas = ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.kHBIfvsaRbIMIzJDSPxexnuTOClW.ToList();
         listofactiondatas.Insert(ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.skUcRTJPUkscVGYhzTxsQdNLnjrhb - 1, inputdata);
