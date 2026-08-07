@@ -3,6 +3,8 @@ using Rewired;
 using Rewired.Data;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using UnityEngine;
 
 namespace BBPRewiredCompat;
 

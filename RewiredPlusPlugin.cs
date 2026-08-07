@@ -19,7 +19,7 @@ public class RewiredPlusPlugin : BaseUnityPlugin
     private const string 
         PLUGIN_GUID = "alexbw145.bbplus.rewiredcompat",
         PLUGIN_NAME = "Rewired Compat API",
-        PLUGIN_VERSION = "1.1.2.0";
+        PLUGIN_VERSION = "1.2.0.0";
     public static string GUID => PLUGIN_GUID;
     internal static new ManualLogSource Logger = new ManualLogSource("Rewired Compat API");
     internal static bool is0x14x2post => new System.Version(
@@ -36,12 +36,11 @@ public class RewiredPlusPlugin : BaseUnityPlugin
 }
 
 [Serializable]
-internal class RewiredPlusData
+internal class RewiredPlusData()
 {
     public string actionName;
     public ControllerType controllerType;
     public int controllerId;
-    public bool isSecondInput;
 
     public KeyCode keyCode;
     public ModifierKeyFlags modifierKeys;
@@ -51,14 +50,11 @@ internal class RewiredPlusData
     public AxisRange axisRange;
     public bool invert;
 
-    public RewiredPlusData() { }
-
     public RewiredPlusData(ActionElementMap elementMap) : this()
     {
         actionName = ReInput.UserData.GetActionById(elementMap.actionId).name;
         controllerType = elementMap.controllerMap.controllerType;
         controllerId = elementMap.controllerMap.controllerId;
-        isSecondInput = elementMap._actionCategoryId != 0;
 
         keyCode = elementMap.keyCode;
         modifierKeys = elementMap.modifierKeyFlags;
@@ -72,12 +68,12 @@ internal class RewiredPlusData
 
 public static partial class RewiredPlusManager
 {
-    internal static List<ActionElementMap> GetElements()
+    internal static List<ActionElementMap> GetElements(Player player)
     {
-        var player = ReInput.players.GetPlayer(0);
         var list = new List<ActionElementMap>();
+        var allCustomActions = actions.Values.ToList();
         foreach (var map in player.controllers.maps.GetAllMaps())
-            map.AllMaps.DoIf(x => x.actionId > ReInput.UserData.actions.Count, list.Add); // DO NOT ADD IN INPUTS TO THIS LIST, THESE ARE LEFT BY DEFAULT.
+            map.AllMaps.DoIf(x => allCustomActions.Exists(j => j.id == x.actionId), list.Add); // Weird unreasoning is that the array is modified to include custom inputs.
         return list;
     }
     internal static void Save()
@@ -92,22 +88,21 @@ public static partial class RewiredPlusManager
             inputs = JsonConvert.DeserializeObject<List<RewiredPlusData>>(File.ReadAllText(Path.Combine(path, "customRewiredInput.json")));
         else
             inputs = new List<RewiredPlusData>();
-        var list = GetElements();
+        var list = GetElements(ReInput.players.GetPlayer(0));
         foreach (var action in actions)
         {
             foreach (var act in list.FindAll(x => x.actionId == action.Value.id))
             {
-                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType && x.axisRange == act.axisRange && x.axisContribution == act.axisContribution && x.isSecondInput == (act._actionCategoryId != 0 ? true : false));
+                inputs.RemoveAll(x => x.actionName == action.Value.name && x.controllerId == act.controllerMap.controllerId && x.controllerType == act.controllerMap.controllerType && x.axisRange == act.axisRange && x.axisContribution == act.axisContribution);
                 inputs.Add(new(act));
             }
             for (int i = 0; i < inputs.Count; i++) { // Makes unassigned inputs "unassigned" so that it will not reload to default bindings again.
-                if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType && j.axisRange == inputs[i].axisRange && j.axisContribution == inputs[i].axisContribution && inputs[i].isSecondInput == (j._actionCategoryId != 0 ? true : false)))
+                if (inputs[i].actionName == action.Value.name && !list.Exists(j => j.actionId == action.Value.id && inputs[i].controllerId == j.controllerMap.controllerId && inputs[i].controllerType == j.controllerMap.controllerType && j.axisRange == inputs[i].axisRange && inputs[i].axisContribution == j.axisContribution))
                 {
                     inputs[i] = new RewiredPlusData()
                     {
                         actionName = action.Value.name,
                         controllerType = inputs[i].controllerType,
-                        isSecondInput = inputs[i].isSecondInput,
                         elementType = inputs[i].elementType,
                         controllerId = inputs[i].controllerId,
                         axisRange = inputs[i].axisRange,
@@ -123,12 +118,12 @@ public static partial class RewiredPlusManager
     }
     private static void SetBind(Player player, Rewired.InputAction action, KeyCode keycode, Pole pole = Pole.Positive)
     {
-        player.controllers.maps.GetMap(ControllerType.Keyboard, 0, GetCategoryID(action), 0).CreateElementMap(action.id, pole, keycode, ModifierKeyFlags.None);
+        player.controllers.maps.GetFirstMapInCategory(ControllerType.Keyboard, 0, GetCategoryID(action))?.CreateElementMap(action.id, pole, keycode, ModifierKeyFlags.None);
     }
     private static void SetBind(Player player, Rewired.InputAction action, int elementIdent, ControllerType type, Pole pole = Pole.Positive, bool fullRange = true)
     {
         if ((type == ControllerType.Joystick && player.controllers.joystickCount > 0) || type == ControllerType.Mouse)
-            player.controllers.maps.GetMap(type, 0, GetCategoryID(action), 0).CreateElementMap(action.id, pole, elementIdent, (ControllerElementType)action.type, fullRange ? AxisRange.Full : (AxisRange)(pole + 1), false);
+            player.controllers.maps.GetFirstMapInCategory(type, 0, GetCategoryID(action))?.CreateElementMap(fullRange ? ElementAssignment.FullAxisAssignment(elementIdent, action.id, false) : ElementAssignment.SplitAxisAssignment(elementIdent, (AxisRange)(pole + 1), action.id, pole));
     }
     internal static void RestoreDefaults()
     {
@@ -137,46 +132,50 @@ public static partial class RewiredPlusManager
         bool saveNow = false;
         foreach (var action in actions)
         {
-            saveNow = true;
+            if (player.controllers.maps.GetFirstMapInCategory(ControllerType.Keyboard, 0, GetCategoryID(action.Value))?.DeleteElementMapsWithAction(action.Value.id) == true)
+                saveNow = true;
+            if (player.controllers.maps.GetFirstMapInCategory(ControllerType.Joystick, 0, GetCategoryID(action.Value))?.DeleteElementMapsWithAction(action.Value.id) == true)
+                saveNow = true;
             if (string.IsNullOrEmpty(action.Value.key)) // positiveKey and negativeKey are not null because they have been autoassigned with key and key + "/negative"
             {
                 KeyCode
                     positiveKey = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.positiveKey),
                     negativeKey = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.negativeKey);
-                if (positiveKey != KeyCode.None)
-                    SetBind(player, action.Value, positiveKey, Pole.Positive);
-                if (negativeKey != KeyCode.None)
-                    SetBind(player, action.Value, negativeKey, Pole.Negative);
+                SetBind(player, action.Value, positiveKey, Pole.Positive);
+                SetBind(player, action.Value, negativeKey, Pole.Negative);
+                if (positiveKey != KeyCode.None || negativeKey != KeyCode.None)
+                    saveNow = true;
             }
             else
             {
                 KeyCode keycode = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key);
+                SetBind(player, action.Value, keycode);
                 if (keycode != KeyCode.None)
-                    SetBind(player, action.Value, keycode);
+                    saveNow = true;
             }
             if (defaultJoystickBinds.ContainsKey(action.Value))
             {
                 if (string.IsNullOrEmpty(action.Value.key))
                 {
-                    if (defaultJoystickBinds[action.Value].Item1 != -1)
-                        SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick, Pole.Positive, false);
-                    if (defaultJoystickBinds[action.Value].Item2 != -1)
-                        SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item2, ControllerType.Joystick, Pole.Negative, false);
+                    SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick, Pole.Positive, false);
+                    SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item2, ControllerType.Joystick, Pole.Negative, false);
                 }
                 else if (defaultJoystickBinds[action.Value].Item1 != -1)
                     SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick);
+                if (defaultJoystickBinds[action.Value].Item1 != -1)
+                    saveNow = true;
             }
             if (defaultMouseBinds.ContainsKey(action.Value))
             {
                 if (string.IsNullOrEmpty(action.Value.key))
                 {
-                    if (defaultMouseBinds[action.Value].Item1 != -1)
-                        SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse, Pole.Positive, false);
-                    if (defaultMouseBinds[action.Value].Item2 != -1)
-                        SetBind(player, action.Value, defaultMouseBinds[action.Value].Item2, ControllerType.Mouse, Pole.Negative, false);
+                    SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse, Pole.Positive, false);
+                    SetBind(player, action.Value, defaultMouseBinds[action.Value].Item2, ControllerType.Mouse, Pole.Negative, false);
                 }
                 else if(defaultMouseBinds[action.Value].Item1 != -1)
                     SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse);
+                if (defaultMouseBinds[action.Value].Item1 != -1)
+                    saveNow = true;
             }
         }
         if (saveNow)
@@ -203,9 +202,7 @@ public static partial class RewiredPlusManager
             if (actions.ContainsKey(input.actionName))
             {
                 ActionElementMap map = null;
-                player.controllers.maps.GetMap(input.controllerType, input.controllerId, GetCategoryID(actions[input.actionName]), 0)?.ReplaceOrCreateElementMap(new(input.controllerType, input.elementType, input.elementIdentifier, input.axisRange, input.keyCode, input.modifierKeys, actions[input.actionName].id, input.axisContribution, input.invert), out map);
-                if (map != null)
-                    map._actionCategoryId = input.isSecondInput ? -1 : 0;
+                player.controllers.maps.GetFirstMapInCategory(input.controllerType, input.controllerId, GetCategoryID(actions[input.actionName]))?.ReplaceOrCreateElementMap(new(input.controllerType, input.elementType, input.elementIdentifier, input.axisRange, input.keyCode, input.modifierKeys, actions[input.actionName].id, input.axisContribution, input.invert), out map);
             }
         }
         foreach (var action in actions.Where(x => !inputs.Exists(j => x.Key == j.actionName && j.controllerType == ControllerType.Keyboard)))
@@ -215,57 +212,55 @@ public static partial class RewiredPlusManager
                 KeyCode 
                     positiveKey = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.positiveKey),
                     negativeKey = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.negativeKey);
-                if (positiveKey != KeyCode.None)
-                {
+                SetBind(player, action.Value, positiveKey, Pole.Positive);
+                SetBind(player, action.Value, negativeKey, Pole.Negative);
+                if (positiveKey != KeyCode.None || negativeKey != KeyCode.None)
                     saveNow = true;
-                    SetBind(player, action.Value, positiveKey, Pole.Positive);
-                }
-                if (negativeKey != KeyCode.None)
-                {
-                    saveNow = true;
-                    SetBind(player, action.Value, negativeKey, Pole.Negative);
-                }
             }
             else
             {
                 KeyCode keycode = (KeyCode)Enum.Parse(typeof(KeyCode), action.Value.key);
+                SetBind(player, action.Value, keycode);
                 if (keycode != KeyCode.None)
-                {
                     saveNow = true;
-                    SetBind(player, action.Value, keycode);
-                }
             }
         }
-        foreach (var action in actions.Where(x => defaultJoystickBinds.ContainsKey(x.Value)))
+        foreach (var action in actions.Where(x => defaultJoystickBinds.ContainsKey(x.Value) && !inputs.Exists(j => x.Key == j.actionName && j.controllerType == ControllerType.Joystick)))
         {
-            if (player.controllers.joystickCount > 0 && !inputs.Exists(j => action.Key == j.actionName && j.controllerType == ControllerType.Joystick))
+            if (player.controllers.joystickCount > 0)
             {
-                saveNow = true;
                 if (string.IsNullOrEmpty(action.Value.key))
                 {
-                    if (defaultJoystickBinds[action.Value].Item1 != -1)
-                        SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick, Pole.Positive, false);
-                    if (defaultJoystickBinds[action.Value].Item2 != -1)
-                        SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item2, ControllerType.Joystick, Pole.Negative, false);
+                    SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick, Pole.Positive, false);
+                    SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item2, ControllerType.Joystick, Pole.Negative, false);
+                    if (defaultJoystickBinds[action.Value].Item1 != -1 || defaultJoystickBinds[action.Value].Item2 != -1)
+                        saveNow = true;
                 }
-                else if (defaultJoystickBinds[action.Value].Item1 != -1)
+                else
+                {
                     SetBind(player, action.Value, defaultJoystickBinds[action.Value].Item1, ControllerType.Joystick);
+                    if (defaultJoystickBinds[action.Value].Item1 != -1)
+                        saveNow = true;
+                }
             }
         }
         foreach (var action in actions.Where(x => defaultMouseBinds.ContainsKey(x.Value)))
         {
             if (!inputs.Exists(j => action.Key == j.actionName && j.controllerType == ControllerType.Mouse))
             {
-                saveNow = true;
                 if (string.IsNullOrEmpty(action.Value.key))
                 {
-                    if (defaultMouseBinds[action.Value].Item1 != -1)
-                        SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse, Pole.Positive, false);
-                    if (defaultMouseBinds[action.Value].Item2 != -1)
-                        SetBind(player, action.Value, defaultMouseBinds[action.Value].Item2, ControllerType.Mouse, Pole.Negative, false);
+                    SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse, Pole.Positive, false);
+                    SetBind(player, action.Value, defaultMouseBinds[action.Value].Item2, ControllerType.Mouse, Pole.Negative, false);
+                    if (defaultMouseBinds[action.Value].Item1 != -1 || defaultMouseBinds[action.Value].Item2 != -1)
+                        saveNow = true;
                 }
-                else if (defaultMouseBinds[action.Value].Item1 != -1)
+                else
+                {
                     SetBind(player, action.Value, defaultMouseBinds[action.Value].Item1, ControllerType.Mouse);
+                    if (defaultMouseBinds[action.Value].Item1 != -1)
+                        saveNow = true;
+                }
             }
         }
         if (saveNow)
@@ -305,11 +300,12 @@ public static partial class RewiredPlusManager
         ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.fCShKwOohAeVUXnbeMlNdzEAyDJF = ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.fCShKwOohAeVUXnbeMlNdzEAyDJF.AddToArray(inputdata);
         var listofactiondatas = ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.kHBIfvsaRbIMIzJDSPxexnuTOClW.ToList();
         listofactiondatas.Insert(ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.skUcRTJPUkscVGYhzTxsQdNLnjrhb - 1, inputdata);
+        var players = ReInput.players.GetPlayers(false);
         if (ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.OBRivntvrCemHCkTRUDyDCQIMWOKA.GetLength(1) < ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.skUcRTJPUkscVGYhzTxsQdNLnjrhb)
         {
-            var twodarray = new CXjDeHHBYTLUiyUxJsOcTBGTUZYJA[ReInput.players.playerCount, ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.skUcRTJPUkscVGYhzTxsQdNLnjrhb];
+            var twodarray = new CXjDeHHBYTLUiyUxJsOcTBGTUZYJA[players.Count, ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.skUcRTJPUkscVGYhzTxsQdNLnjrhb];
             int exactlength = ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.OBRivntvrCemHCkTRUDyDCQIMWOKA.GetLength(1) - 1;
-            for (int i = 0; i < ReInput.players.playerCount; i++)
+            for (int i = 0; i < players.Count; i++)
             {
                 for (int j = 0; j < ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.skUcRTJPUkscVGYhzTxsQdNLnjrhb; j++)
                 {
@@ -320,6 +316,7 @@ public static partial class RewiredPlusManager
                         inputdata = new CXjDeHHBYTLUiyUxJsOcTBGTUZYJA(i, action, behavior, ReInput.configVars);
                         twodarray[i, j] = inputdata;
                         listofactiondatas.Insert((i + 2) * j, inputdata);
+                        ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.ByHWIUKvbiwsBtmtaxbobgkloktH[i].rokAZXjLPWcswjtccSnjFdUgrSkhc = ReInput.RkhXZiawgZIAYuRDboepGdPvKqDL.ByHWIUKvbiwsBtmtaxbobgkloktH[i].rokAZXjLPWcswjtccSnjFdUgrSkhc.AddToArray(0);
                     }
                 }
             }
@@ -363,23 +360,24 @@ public static partial class RewiredPlusManager
                 categoryId = (int)categoryID,
             };
             action.DJYOTBmJjtfSTvwDqbRIgptIirJuA();
-            action.key = Keyboard.GetKeyName(key);
+            if (key != KeyCode.None)
+                action.key = Keyboard.GetKeyName(key);
+            if (joystickElementId != -1)
+                defaultJoystickBinds.Add(action, (joystickElementId, -1));
+            if (mouseElementId != -1)
+                defaultMouseBinds.Add(action, (mouseElementId, -1));
             actions.Add(name, action);
             userData.NUOyBxwHYBZqYgECChWsabGDMOVS.Add(action);
+            userData.actions.Add(action);
             var behavior = userData.GetInputBehaviorById((int)behaviorID); // Just do not go above 0 to 1, those are the already defined ones. (Especially when most uses the number 1)
             if (behavior == null) 
                 throw new NullReferenceException("Behavior is null");
-            userData.actionCategoryMap.list.Add(new Rewired.Data.Mapping.ActionCategoryMap.Entry((int)categoryID));
             userData.actionCategoryMap.AddAction((int)categoryID, action.id);
             DoInsertsToRewired(action, behavior);
             actionIsDigital.Add(name, type == InputActionType.Button);
             InputManager.Instance.rewiredInputNameToSteamInputName.Add(name, name);
             if (SteamManager.Initialized)
                 InputManager.Instance.steamDigitalInputs.Add(name, new DigitalInputData(SteamInput.GetDigitalActionHandle(name)));
-            if (joystickElementId != -1)
-                defaultJoystickBinds.Add(action, (joystickElementId, -1));
-            if (mouseElementId != -1)
-                defaultMouseBinds.Add(action, (mouseElementId, -1));
             return true;
         }
         catch (Exception ex)
@@ -433,22 +431,24 @@ public static partial class RewiredPlusManager
                     categoryId = (int)categoryID,
                 };
                 action.DJYOTBmJjtfSTvwDqbRIgptIirJuA();
-                action.positiveKey = Keyboard.GetKeyName(step == 0 ? key.Value.Item1 : key.Value.Item3);
-                action.negativeKey = Keyboard.GetKeyName(step == 0 ? key.Value.Item2 : key.Value.Item4);
-                actions.Add(name + xy, action);
-                userData.NUOyBxwHYBZqYgECChWsabGDMOVS.Add(action);
-                var behavior = userData.GetInputBehaviorById((int)behaviorID); // Just do not go above 0 to 1, those are the already defined ones. (Especially when most uses the number 1)
-                if (behavior == null)
-                    throw new NullReferenceException("Behavior is null");
-                userData.actionCategoryMap.list.Add(new Rewired.Data.Mapping.ActionCategoryMap.Entry((int)categoryID));
-                userData.actionCategoryMap.AddAction((int)categoryID, action.id);
-                DoInsertsToRewired(action, behavior);
-                actionIsDigital.Add(name + xy, type == InputActionType.Button);
-                InputManager.Instance.rewiredInputNameToSteamInputName.Add(name + xy, name);
+                if (step == 0 ? key.Value.Item1 != KeyCode.None : key.Value.Item3 != KeyCode.None)
+                    action.positiveKey = Keyboard.GetKeyName(step == 0 ? key.Value.Item1 : key.Value.Item3);
+                if (step == 0 ? key.Value.Item2 != KeyCode.None : key.Value.Item4 != KeyCode.None)
+                    action.negativeKey = Keyboard.GetKeyName(step == 0 ? key.Value.Item2 : key.Value.Item4);
                 if ((step == 0 ? (joystickElementId.Value.Item1, joystickElementId.Value.Item3) : (joystickElementId.Value.Item2, joystickElementId.Value.Item4)) != (-1, -1))
                     defaultJoystickBinds.Add(action, (step == 0 ? (joystickElementId.Value.Item1, joystickElementId.Value.Item3) : (joystickElementId.Value.Item2, joystickElementId.Value.Item4)));
                 if ((step == 0 ? (mouseElementId.Value.Item1, mouseElementId.Value.Item3) : (mouseElementId.Value.Item2, mouseElementId.Value.Item4)) != (-1, -1))
                     defaultMouseBinds.Add(action, (step == 0 ? (mouseElementId.Value.Item1, mouseElementId.Value.Item3) : (mouseElementId.Value.Item2, mouseElementId.Value.Item4)));
+                actions.Add(name + xy, action);
+                userData.NUOyBxwHYBZqYgECChWsabGDMOVS.Add(action);
+                userData.actions.Add(action);
+                var behavior = userData.GetInputBehaviorById((int)behaviorID); // Just do not go above 0 to 1, those are the already defined ones. (Especially when most uses the number 1)
+                if (behavior == null)
+                    throw new NullReferenceException("Behavior is null");
+                userData.actionCategoryMap.AddAction((int)categoryID, action.id);
+                DoInsertsToRewired(action, behavior);
+                actionIsDigital.Add(name + xy, type == InputActionType.Button);
+                InputManager.Instance.rewiredInputNameToSteamInputName.Add(name + xy, name);
             }
             if (SteamManager.Initialized)
                 InputManager.Instance.steamAnalogInputs.Add(name, SteamInput.GetAnalogActionHandle(name));
