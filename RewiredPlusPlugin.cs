@@ -81,8 +81,14 @@ public static partial class RewiredPlusManager
         if (RewiredPlusPlugin.is0x14x2post && PlayerFileManager.Instance.fileName == "!UnassignedFile")
             return;
         var path = Path.Combine(Application.persistentDataPath, "Modded");
+        if (!Directory.Exists(path))
+            Directory.CreateDirectory(path);
         if (RewiredPlusPlugin.is0x14x2post)
+        {
             path = Path.Combine(path, PlayerFileManager.Instance.fileName);
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+        }
         List<RewiredPlusData> inputs;
         if (File.Exists(Path.Combine(path, "customRewiredInput.json")))
             inputs = JsonConvert.DeserializeObject<List<RewiredPlusData>>(File.ReadAllText(Path.Combine(path, "customRewiredInput.json")));
@@ -186,8 +192,14 @@ public static partial class RewiredPlusManager
         if (RewiredPlusPlugin.is0x14x2post && PlayerFileManager.Instance.fileName == "!UnassignedFile")
             return;
         var path = Path.Combine(Application.persistentDataPath, "Modded");
+        if (!Directory.Exists(path))
+            Directory.CreateDirectory(path);
         if (RewiredPlusPlugin.is0x14x2post)
+        {
             path = Path.Combine(path, PlayerFileManager.Instance.fileName);
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+        }
         if (!File.Exists(Path.Combine(path, "customRewiredInput.json")))
         {
             RestoreDefaults();
