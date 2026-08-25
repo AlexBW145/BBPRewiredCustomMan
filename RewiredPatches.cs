@@ -4,6 +4,7 @@ using Rewired.Data;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace BBPRewiredCompat;
@@ -21,6 +22,46 @@ internal class RewiredPatches
     private static void SaveOLD() => RewiredPlusManager.Save();
     [HarmonyPatch(typeof(UserDataStore_KeyValue), "Save"), HarmonyPostfix]
     private static void Save() => RewiredPlusManager.Save();
+    [HarmonyPatch(typeof(UserDataStore_KeyValue), nameof(UserDataStore_KeyValue.allActionIds), MethodType.Getter), HarmonyPostfix]
+    private static void ReturnNotModded(ref List<int> __result)
+    {
+        if (RewiredPlusManager.Actions.Count == 0) return;
+        List<int> modifying = new(__result);
+        var startingIndex = int.MaxValue;
+        foreach (var action in RewiredPlusManager.Actions.Values)
+        {
+            if (action.id > startingIndex)
+                startingIndex = action.id;
+        }
+        for (var index = 0; index < modifying.Count; index++)
+        {
+            if (modifying[index] >= startingIndex)
+            {
+                modifying.RemoveAt(index);
+                index--;
+            }
+        }
+        __result = modifying;
+    }
+    [HarmonyPatch(typeof(UserDataStore_KeyValue), nameof(UserDataStore_KeyValue.allActionIdsString), MethodType.Getter), HarmonyPostfix]
+    private static void ReturnNotModdedString(ref string __result, UserDataStore_KeyValue __instance)
+    {
+        if (RewiredPlusManager.Actions.Count == 0) return;
+        var startingIndex = RewiredPlusManager.Actions.First().Value.id;
+        StringBuilder stringBuilder = new StringBuilder(__result);
+        List<int> list = __instance.allActionIds;
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i] >= startingIndex)
+                continue;
+            if (i > 0)
+                stringBuilder.Append(",");
+
+            stringBuilder.Append(list[i]);
+        }
+
+        __result = stringBuilder.ToString();
+    }
     [HarmonyPatch(typeof(PlayerFileManager), "Load"), HarmonyPostfix]
     private static void Load() => RewiredPlusManager.Load();
     [HarmonyPatch(typeof(Rewired.UI.ControlMapper.ControlMapper), "Initialize"), HarmonyPrefix]
